@@ -1,57 +1,69 @@
 #include <iostream>
+#include <cmath>
 #include <time.h>
 #include "basicFunctions.h"
 #include "treeGeneOps.h"
+#include "tools.h"
 
 using namespace std;
 
-const int NUM_INIT_TREES = 2;
+const int NUM_INIT_TREES = 300;
+const int NUM_GENERATIONS = 15;
+const int NUM_DIE_PER_GEN = 70; //how much of the pop we loose per generation
+
+int getRandSurvior();
 
 int main (int argc, char * const argv[]) {
 	srand(time(NULL));  //seed the RNG
+	double sumAbsErr, err = 0.0;
 	//create array to store N trees
 	GOftn* initTrees[NUM_INIT_TREES];
-	GOftn* cloneTrees[NUM_INIT_TREES];
-	int inputs[10] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
-	int outputs[10] = {1, 6, 15, 28, 45, 66, 91, 120, 153, 190}; //2x^2 + 3x + 1
+
+	const int NUM_INPUTS = 9;
+	double inputs[NUM_INPUTS] = {1, 2, 3, 4, 5, 6, 7, 8, 9};
+	double outputs[NUM_INPUTS] = {6, 15, 28, 45, 66, 91, 120, 153, 190}; //2x^2 + 3x + 1
 	
 	// create the inital tree population 
 	for (int i=0; i<NUM_INIT_TREES; i++){
-		printf("creating tree: %d \n", i);
 		initTrees[i] = createRandomTree();
-		printTree(initTrees[i]);
 	}
 	
-	// test the performance of each one
-	for (int i=0; i<NUM_INIT_TREES; i++){
-		printf("evaluating tree %d: %f \n", i, initTrees[i]->eval(1.0));
+	for (int gen=0; gen<NUM_GENERATIONS; gen++) {
+		// test the performance of each one
+		// this should be problem-dependent, and implemented in another file
+		for (int i=0; i<NUM_INIT_TREES; i++){
+			sumAbsErr = 0.0;
+			for (int j=0; j<NUM_INPUTS; j++) {
+				err = outputs[j] - (initTrees[i]->eval(inputs[j]));
+				sumAbsErr += abs(err);
+			}
+			PRINTD("evaluating tree %d: %f \n", i, sumAbsErr);
+			if (sumAbsErr == 0){
+				printf("found a solution with 0 error\n");
+				printTree(initTrees[i]);
+				break;
+			}
+			initTrees[i]->perfScore = sumAbsErr;
+		}
+		
+		//sort by performance (sort in increasing order so we work on first N)
+		sort(initTrees, initTrees + NUM_INIT_TREES, treeSortPredIncre);
+		
+		for (int i=0; i<NUM_DIE_PER_GEN; i++){
+			deleteTree(initTrees[i]);			//toss out losers
+			//randomly select one of the survivors and clone
+			initTrees[i] = initTrees[getRandSurvior()]->clone();
+			//do cross over with survivors 
+			//crossOver(initTrees[i], initTrees[getRandSurvior()]);
+			crossOver(initTrees[i], initTrees[NUM_INIT_TREES - 1]);  //cross over with best
+			mutateTree(&initTrees[i]);	//mutate
+		}
+		printf("Generation %d the best score is: %f\n", gen, initTrees[NUM_INIT_TREES - 1]->perfScore);
 	}
-	
-	/*
-	//toss out losers
-	//deleteTree(initTrees[0]);
-	//copy, mutate and crossover winners
-	for (int i=0; i<NUM_INIT_TREES; i++){
-		printf("cloning tree %d:\n", i);
-		cloneTrees[i] = initTrees[i]->clone();
-		mutateTree(&cloneTrees[i]);
-	}
-	*/
-	
-	printf("crossover between tree 0 and 1\n");
-	GOftn* crossOverTree;
-	crossOverTree = initTrees[1]->clone();
-	crossOver(crossOverTree, initTrees[0]);
-	printTree(crossOverTree);
-	
-	/*
-	for (int i=0; i<NUM_INIT_TREES; i++){
-		printf("clone tree %d:\n", i);
-		printTree(cloneTrees[i]);
-	}
-	printf("original tree %d:\n", 0);
-	printTree(initTrees[0]);
-	*/
-	
+	printTree(initTrees[NUM_INIT_TREES - 1]);
     return 0;
+}
+int getRandSurvior(){
+	int randn = rand() % (NUM_INIT_TREES - NUM_DIE_PER_GEN);
+	return (NUM_DIE_PER_GEN + randn);
 }

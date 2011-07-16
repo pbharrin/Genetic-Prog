@@ -5,11 +5,13 @@
  *  Created by Peter Harrington on 7/15/11.
  *  Copyright 2011 Clean Micro, LLC. All rights reserved.
  *
- *	[ ] TO DO: crossover
+ *	[X] TO DO: crossover
  *
  */
 #include <iostream>
 #include "treeGeneOps.h"
+#include "tools.h"
+
 using namespace std;
 
 const int NUM_INPUTS = 1;
@@ -22,13 +24,13 @@ void crossOver(GOftn* treeToAlter, GOftn* donatingTree){
 		deleteTree(treeToAlter->children[childToAlter]);//delete side of treeToAlter
 		treeToAlter->children[childToAlter] = (donatingTree->children[childToDonate])->clone();//clone side of donatingTree
 	}
-	else printf("not enough child nodes to do crossover\n");
+	else PRINTD("not enough child nodes to do crossover\n");
 }
 
 void mutateTree(GOftn** inTree, int depth){
 	double randNum0t1 = rand()/(double)RAND_MAX;
 	if (randNum0t1 < MUTATION_THRESH) {
-		printf("SHOULD MUTATE\n");
+		PRINTD("SHOULD MUTATE\n");
 		//create new node
 		GOftn* newNode = createRandomNode(depth + 1);//create a random node to replace current node
 		int childrenToMove = min(newNode->numChildren, (*inTree)->numChildren);
@@ -102,4 +104,7 @@ void deleteTree(GOftn* inTree){
 		deleteTree(inTree->children[i]);
 	}
 	free(inTree);
+}
+bool treeSortPredIncre(GOftn* t1, GOftn* t2){
+	return t1->perfScore > t2->perfScore;
 }
