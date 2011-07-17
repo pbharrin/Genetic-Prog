@@ -1,3 +1,4 @@
+//			
 #include <iostream>
 #include <cmath>
 #include <time.h>
@@ -9,7 +10,7 @@ using namespace std;
 
 const int NUM_INIT_TREES = 300;
 const int NUM_GENERATIONS = 15;
-const int NUM_DIE_PER_GEN = 70; //how much of the pop we loose per generation
+const int NUM_DIE_PER_GEN = 90; //how much of the pop we loose per generation
 
 int getRandSurvior();
 
@@ -43,6 +44,7 @@ int main (int argc, char * const argv[]) {
 				printTree(initTrees[i]);
 				break;
 			}
+			if (isnan(sumAbsErr)) sumAbsErr = 1E+37; //max double val
 			initTrees[i]->perfScore = sumAbsErr;
 		}
 		
